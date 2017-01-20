@@ -134,7 +134,7 @@
                 CGFloat maxW = (CGFloat)[command.arguments[0] floatValue];
                 CGFloat maxH = (CGFloat)[command.arguments[1] floatValue];
                 BOOL toFile = (BOOL)[command.arguments[2] boolValue];
-                [self invokeTakePicture:maxW withHeight:maxH withSavePhotosToFile:toFile];
+                [self invokeTakePicture:maxW withHeight:maxH withSavePhotoToFile:toFile];
         } else {
                 pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"];
                 [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
@@ -186,9 +186,9 @@
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 - (void) invokeTakePicture {
-        [self invokeTakePicture:0.0 withHeight:0.0 withSavePhotosToFile:false];
+        [self invokeTakePicture:0.0 withHeight:0.0 withSavePhotoToFile:false];
 }
-- (void) invokeTakePicture:(CGFloat) maxWidth withHeight:(CGFloat) maxHeight withSavePhotosToFile:(BOOL) savePhotosToFile {
+- (void) invokeTakePicture:(CGFloat) maxWidth withHeight:(CGFloat) maxHeight withSavePhotoToFile:(BOOL) savePhotoToFile {
         AVCaptureConnection *connection = [self.sessionManager.stillImageOutput connectionWithMediaType:AVMediaTypeVideo];
         [self.sessionManager.stillImageOutput captureStillImageAsynchronouslyFromConnection:connection completionHandler:^(CMSampleBufferRef sampleBuffer, NSError *error) {
 
@@ -280,7 +280,7 @@
                             orientation = ALAssetOrientationRight;
                         }
                             
-                        if(savePhotosToFile){
+                        if(savePhotoToFile){
 
                             // Save image.
                             UIImage *finalUImage = [[UIImage alloc] initWithCGImage:finalImage];
@@ -328,7 +328,7 @@
                                         [params addObject:[NSString stringWithFormat:@"CameraPreview: %@ - %@ — %@", [photosAlbumError localizedDescription], [photosAlbumError localizedFailureReason], remedy]];
                                 } else {
                                         // Success returns two elements in the returned array
-                                    if(savePhotosToFile){
+                                    if(savePhotoToFile){
                                         [params addObject:filePath];
                                     }else{
                                         [params addObject:originalPicturePath];

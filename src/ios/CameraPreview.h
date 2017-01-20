@@ -16,7 +16,7 @@
 - (void) setOnPictureTakenHandler:(CDVInvokedUrlCommand*)command;
 - (void) setColorEffect:(CDVInvokedUrlCommand*)command;
 
-- (void) invokeTakePicture:(CGFloat) maxWidth withHeight:(CGFloat) maxHeight withSavePhotosToFile:(BOOL)savePhotosToFile;
+- (void) invokeTakePicture:(CGFloat) maxWidth withHeight:(CGFloat) maxHeight withSavePhotoToFile:(BOOL)savePhotoToFile;
 - (void) invokeTakePicture;
 
 @property (nonatomic) CameraSessionManager *sessionManager;
