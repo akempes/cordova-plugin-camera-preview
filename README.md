@@ -62,11 +62,11 @@ cordova.plugins.camerapreview.startCamera(rect, "front", tapEnabled, dragEnabled
 cordova.plugins.camerapreview.stopCamera();
 ```
 
-<b>takePicture(size)</b><br/>
-<info>Take the picture, the parameter size is optional</info><br/>
+<b>takePicture(size, saveToFile)</b><br/>
+<info>Take the picture, the parameter size and saveToFile are optional</info><br/>
 
 ```
-cordova.plugins.camerapreview.takePicture({maxWidth:640, maxHeight:640});
+cordova.plugins.camerapreview.takePicture({maxWidth:640, maxHeight:640}, true);
 ```
 
 

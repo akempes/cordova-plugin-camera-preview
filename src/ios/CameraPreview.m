@@ -133,7 +133,8 @@
         if (self.cameraRenderController != NULL) {
                 CGFloat maxW = (CGFloat)[command.arguments[0] floatValue];
                 CGFloat maxH = (CGFloat)[command.arguments[1] floatValue];
-                [self invokeTakePicture:maxW withHeight:maxH];
+                BOOL toFile = (BOOL)[command.arguments[2] boolValue];
+                [self invokeTakePicture:maxW withHeight:maxH withSavePhotosToFile:toFile];
         } else {
                 pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"];
                 [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
@@ -185,9 +186,9 @@
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 - (void) invokeTakePicture {
-        [self invokeTakePicture:0.0 withHeight:0.0];
+        [self invokeTakePicture:0.0 withHeight:0.0 withSavePhotosToFile:false];
 }
-- (void) invokeTakePicture:(CGFloat) maxWidth withHeight:(CGFloat) maxHeight {
+- (void) invokeTakePicture:(CGFloat) maxWidth withHeight:(CGFloat) maxHeight withSavePhotosToFile:(BOOL) savePhotosToFile {
         AVCaptureConnection *connection = [self.sessionManager.stillImageOutput connectionWithMediaType:AVMediaTypeVideo];
         [self.sessionManager.stillImageOutput captureStillImageAsynchronouslyFromConnection:connection completionHandler:^(CMSampleBufferRef sampleBuffer, NSError *error) {
 
@@ -245,55 +246,76 @@
 
                          CGImageRef finalImage = [self.cameraRenderController.ciContext createCGImage:finalCImage fromRect:finalCImage.extent];
 
-                         ALAssetsLibrary *library = [[ALAssetsLibrary alloc] init];
 
-                         dispatch_group_t group = dispatch_group_create();
+                        NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
 
-                         __block NSString *originalPicturePath;
-                         __block NSString *previewPicturePath;
-                         __block NSError *photosAlbumError;
+                        NSDate *today = [NSDate date];
+                        NSDateFormatter *dateFormat = [[NSDateFormatter alloc] init];
+                        [dateFormat setDateFormat:@"MMddyyyy_HHmmssSS"];
+                        NSString *dateString = [dateFormat stringFromDate:today];
+                        NSString *filePath = [[paths objectAtIndex:0] stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_image.jpg",dateString]];
 
-                         ALAssetOrientation orientation;
-                         switch ([[UIApplication sharedApplication] statusBarOrientation]) {
-                         case UIDeviceOrientationPortraitUpsideDown:
-                                 orientation = ALAssetOrientationLeft;
-                                 break;
-                         case UIDeviceOrientationLandscapeLeft:
-                                 orientation = ALAssetOrientationUp;
-                                 break;
-                         case UIDeviceOrientationLandscapeRight:
-                                 orientation = ALAssetOrientationDown;
-                                 break;
-                         case UIDeviceOrientationPortrait:
-                         default:
-                                 orientation = ALAssetOrientationRight;
-                         }
 
-                         // task 1
-                         dispatch_group_enter(group);
-                         [library writeImageToSavedPhotosAlbum:previewImage orientation:ALAssetOrientationUp completionBlock:^(NSURL *assetURL, NSError *error) {
-                                  if (error) {
-                                          NSLog(@"FAILED to save Preview picture.");
-                                          photosAlbumError = error;
-                                  } else {
-                                          previewPicturePath = [assetURL absoluteString];
-                                          NSLog(@"previewPicturePath: %@", previewPicturePath);
-                                  }
-                                  dispatch_group_leave(group);
-                          }];
+                        ALAssetsLibrary *library = [[ALAssetsLibrary alloc] init];
 
-                         //task 2
-                         dispatch_group_enter(group);
-                         [library writeImageToSavedPhotosAlbum:finalImage orientation:orientation completionBlock:^(NSURL *assetURL, NSError *error) {
-                                  if (error) {
-                                          NSLog(@"FAILED to save Original picture.");
-                                          photosAlbumError = error;
-                                  } else {
-                                          originalPicturePath = [assetURL absoluteString];
-                                          NSLog(@"originalPicturePath: %@", originalPicturePath);
-                                  }
-                                  dispatch_group_leave(group);
-                          }];
+                        dispatch_group_t group = dispatch_group_create();
+
+                        __block NSString *originalPicturePath;
+                        __block NSString *previewPicturePath;
+                        __block NSError *photosAlbumError;
+
+                        ALAssetOrientation orientation;
+                        switch ([[UIApplication sharedApplication] statusBarOrientation]) {
+                            case UIDeviceOrientationPortraitUpsideDown:
+                            orientation = ALAssetOrientationLeft;
+                            break;
+                            case UIDeviceOrientationLandscapeLeft:
+                            orientation = ALAssetOrientationUp;
+                            break;
+                            case UIDeviceOrientationLandscapeRight:
+                            orientation = ALAssetOrientationDown;
+                            break;
+                            case UIDeviceOrientationPortrait:
+                            default:
+                            orientation = ALAssetOrientationRight;
+                        }
+                            
+                        if(savePhotosToFile){
+
+                            // Save image.
+                            UIImage *finalUImage = [[UIImage alloc] initWithCGImage:finalImage];
+                            [UIImageJPEGRepresentation(finalUImage,1) writeToFile:filePath atomically:YES];
+
+                        }else{
+
+                             // task 1
+                             dispatch_group_enter(group);
+                             [library writeImageToSavedPhotosAlbum:previewImage orientation:ALAssetOrientationUp completionBlock:^(NSURL *assetURL, NSError *error) {
+                                      if (error) {
+                                              NSLog(@"FAILED to save Preview picture.");
+                                              photosAlbumError = error;
+                                      } else {
+                                              previewPicturePath = [assetURL absoluteString];
+                                              NSLog(@"previewPicturePath: %@", previewPicturePath);
+                                      }
+                                      dispatch_group_leave(group);
+                              }];
+
+                             //task 2
+                             dispatch_group_enter(group);
+                             [library writeImageToSavedPhotosAlbum:finalImage orientation:orientation completionBlock:^(NSURL *assetURL, NSError *error) {
+                                      if (error) {
+                                              NSLog(@"FAILED to save Original picture.");
+                                              photosAlbumError = error;
+                                      } else {
+                                              originalPicturePath = [assetURL absoluteString];
+                                              NSLog(@"originalPicturePath: %@", originalPicturePath);
+                                      }
+                                      dispatch_group_leave(group);
+                              }];
+                              
+                        }
+
 
                          dispatch_group_notify(group, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
                                 NSMutableArray *params = [[NSMutableArray alloc] init];
@@ -306,8 +328,12 @@
                                         [params addObject:[NSString stringWithFormat:@"CameraPreview: %@ - %@ — %@", [photosAlbumError localizedDescription], [photosAlbumError localizedFailureReason], remedy]];
                                 } else {
                                         // Success returns two elements in the returned array
+                                    if(savePhotosToFile){
+                                        [params addObject:filePath];
+                                    }else{
                                         [params addObject:originalPicturePath];
                                         [params addObject:previewPicturePath];
+                                    }
                                 }
 
                                 CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:params];

@@ -20,11 +20,12 @@ CameraPreview.stopCamera = function() {
   exec(null, null, PLUGIN_NAME, "stopCamera", []);
 };
 //@param size {maxWidth: 100, maxHeight:100}
-CameraPreview.takePicture = function(size) {
+CameraPreview.takePicture = function(size, saveToFile) {
   var params = [0, 0];
   if (size) {
     params = [size.maxWidth, size.maxHeight];
   }
+  params.push(saveToFile||false);
   exec(null, null, PLUGIN_NAME, "takePicture", params);
 };
 
